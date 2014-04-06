@@ -41,3 +41,18 @@
 		       "-(?<d>\d{2})")
 		      "2014-04-06")
 		  (list $y $m $d $-m $+m)))))
+
+(test re-local
+  (is (equal '(let ($0 $-0 $+0 $1 $-1 $+1 $2 $-2 $+2 $d $-d $+d $3 $-3 $+3)
+	       (declare (special $0 $-0 $+0 $1 $-1 $+1 $2 $-2 $+2 $d $-d $+d $3 $-3 $+3))
+	       (m~ "a(s)(?<d>d)(f)"))
+	     (macroexpand-1 '(re-local (m~ "a(s)(?<d>d)(f)")))))
+  (is (equal '(let ($g $-g $+g $h $-h $+h $0 $-0 $+0 $1 $-1 $+1 $2 $-2 $+2 $d $-d $+d $3 $-3 $+3)
+	       (declare (special $g $-g $+g $h $-h $+h $0 $-0 $+0 $1 $-1 $+1 $2 $-2 $+2 $d $-d $+d $3 $-3 $+3))
+	       (m~ "a(s)(?<d>d)(f)")
+	       (m~ "(?<g>g)(?<h>h)"))
+	     (macroexpand-1 '(re-local (m~ "a(s)(?<d>d)(f)")
+			      (m~ "(?<g>g)(?<h>h)"))))))
+			      
+			      
+  

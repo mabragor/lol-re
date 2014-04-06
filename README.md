@@ -25,10 +25,13 @@ Only so far interpolations are not possible, but you don't have to escape backsl
 
 TODO:
   * (done) creation of scanner, when regex-spec is just plain string
-  * do all the expansion at read-time, so that ((m~ "asdf") str) syntax be possible
+  * (wont do) do all the expansion at read-time, so that ((m~ "asdf") str) syntax be possible
   * usage of cl-interpol strings as regex-spec
   * (done) list of strings instead of just one string (auto joining)
   * ability to turn off some anaphoric bindings
+  * convenient iterate macros
+    * for iterating over all matches within a given string
+    * for iterating over multiple strings with the same regexp
 
 S~
 --
@@ -39,19 +42,41 @@ S~
 TODO:
   * creation of substituter, both target and replacement are plain strings
 
+
 re-local
 --------
 
-How it works: codewalking of the body, with M~ and S~ substituted by
-some other macro, whose purpose is to 'tell' RE-LOCAL, which variables are about
-to be bound in them. Then, knowing those variables, it just LET-SPECIALs them.
+The purpose of this macro is to tackle issues, that arise when multithreading.
+
+```lisp
+(re-local (all-the-variables like $1 $2 $a)
+          (arising-from-use-of-m~)
+          (are-declared-local-special)
+          (inside-re-local))
+```
+
+So
+```lisp
+;; this is not thread-safe, as some other thread may corrupt $1 before PRINC gets executed
+(and (m~ "foo(bar)") (princ $1))
+```
+
+But
+```lisp
+;; this is (supposedly) thread-safe, as all the relevant variables are implicitly
+(re-local (and (m~ "foo(bar)") (princ $1)))
+```
+
+How it works: codewalks (with help of HU.DWIM.WALKER) the body, with M~ and S~
+redefined as MACROLETs, with same expansion, but with side-effect
+of telling RE-LOCAL, what variables they are going to initialize.
+
+N.B.: If M~ was to be defined fully as read-time macro,
+ then it's not possible to write RE-LOCAL even using code-walking,
+since it's not possible (read: very hard and ugly) to read the form twice from a stream.
+So, I won't define M~ to be read-time macro, at cost of sometimes being required to write FUNCALL.
 
 Gotchas
 -------
 
-Of course, binding global dynamical variables (which $0, $1 and so on are) is not thread-safe.
-When writing simple one-time functions (analog of Perl one-liners), or prototyping,
-this is almost never a concern, however, at the later stages of development you
-can simply enclose lol-re using parts of code into RE-LOCAL, which rebinds
-all relevant dynamical variables locally, thus making them per-thread
-(according to bordeaux-threads model).
+* potential racing conditions when multithreading (but, read re-local section)

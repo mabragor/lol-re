@@ -7,7 +7,7 @@
   :author "Alexander Popolitov <popolit@gmail.com>"
   :license "GPL"
   :depends-on (#:cl-ppcre #:cl-interpol #:cl-read-macro-tokens #:defmacro-enhance #:alexandria
-			  #:iterate)
+			  #:iterate #:hu.dwim.walker)
   :components ((:file "package")
                (:file "lol-re")))
 
