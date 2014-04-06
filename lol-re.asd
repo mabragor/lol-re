@@ -6,7 +6,8 @@
   :description "Small set of wrappers around CL-PPCRE in spirit of Let Over Lambda."
   :author "Alexander Popolitov <popolit@gmail.com>"
   :license "GPL"
-  :depends-on (#:cl-ppcre #:cl-interpol #:cl-read-macro-tokens #:defmacro-enhance #:alexandria)
+  :depends-on (#:cl-ppcre #:cl-interpol #:cl-read-macro-tokens #:defmacro-enhance #:alexandria
+			  #:iterate)
   :components ((:file "package")
                (:file "lol-re")))
 
@@ -14,7 +15,7 @@
 (defsystem :lol-re-tests
   :description "Tests for LOL-RE."
   :licence "GPL"
-  :depends-on (#:lol-re #:fiveam)
+  :depends-on (#:lol-re #:fiveam #:iterate)
   :serial t
   :components ((:file "tests")))
 

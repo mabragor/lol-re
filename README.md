@@ -11,26 +11,33 @@ M~ is for matching, while S~ is for substitution
 M~
 --
 
-What's new w.r.t combination of CL-PPCRE + CL-INTERPOL + RX:
-1. Not only $1 .. $9 are bound, but also $-1 ... $-9, $+1 ... $+9, and
-   also variables for named capture groups
-2. Syntax duality:  1 argument - scanner closure,
-   2 arguments - application of closure, returning matched substring
-3. can specify attributes such as x g p e i conveniently
-4. auto-concatenation of multiple strings (to ease write of regexp on
-                                           multiple lines)
+Basic example:
 
-Plan of generalization:
-1. First version: only literal strings are supported, errors on everything else
-2. cl-interpol strings are supported, *but* group capturing information must not
-   depend on interpolated pieces.
-3. Optimizations: abilities to turn some anaphoric bindings off.
+```lisp
+(with-open-file (out-file "out-file" :direction :output)
+  (iter (for line in-file "in-file" using #'readline)
+        (and (m~ "(some)regexp(?<with>with)grouping(s)" line)
+             (format out-file #?"$($1) $($2) $($with) $($3)"))))
+```
+
+Syntax of string in M~ is the same as in #?r cl-interpol's reader macro.
+Only so far interpolations are not possible, but you don't have to escape backslashes!
+
+TODO:
+  * (done) creation of scanner, when regex-spec is just plain string
+  * do all the expansion at read-time, so that ((m~ "asdf") str) syntax be possible
+  * usage of cl-interpol strings as regex-spec
+  * list of strings instead of just one string (auto joining)
+  * ability to turn off some anaphoric bindings
 
 S~
 --
 
 1. Not only \1 ... \2 may be used in target strings, but also $($1) .. $($9)
    (and also named groups), a la cl-interpol
+
+TODO:
+  * creation of substituter, both target and replacement are plain strings
 
 re-local
 --------

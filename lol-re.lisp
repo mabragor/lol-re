@@ -16,8 +16,16 @@
 		(progn (setf pos match-end)
 		       (values match-start match-end reg-starts reg-ends))))))))
 
+(defun string-reverse-case (str)
+  (iter (for char in-string str)
+	(if (upper-case-p char)
+	    (collect (char (string-downcase char) 0) into res)
+	    (collect (char (string-upcase char) 0) into res))
+	(finally (return (coerce res 'string)))))
+	    
+
 (defun list-o-syms (name)
-  (let ((name (format nil "~a" name)))
+  (let ((name (string-reverse-case (format nil "~a" name))))
     (list (intern (concatenate 'string "$" name))
 	  (intern (concatenate 'string "$-" name))
 	  (intern (concatenate 'string "$+" name)))))
@@ -125,7 +133,7 @@
 					      (progn ,@(clear-regs register-names)
 						     t)
 					      (progn ,@(bind-regs register-names)
-						     $0))
+						     ,(intern "$0")))
 					  (progn ,@(clear-regs register-names)
 						 nil)))))))
 	(if (not argument-p)
