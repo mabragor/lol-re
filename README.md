@@ -27,7 +27,7 @@ TODO:
   * (done) creation of scanner, when regex-spec is just plain string
   * do all the expansion at read-time, so that ((m~ "asdf") str) syntax be possible
   * usage of cl-interpol strings as regex-spec
-  * list of strings instead of just one string (auto joining)
+  * (done) list of strings instead of just one string (auto joining)
   * ability to turn off some anaphoric bindings
 
 S~

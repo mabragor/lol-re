@@ -112,8 +112,13 @@
        ,(with-re-reader-context
 	 (read stream t nil t))
        ,@(read-list-old stream token))
-  (if (not (stringp regex-spec))
-      (error "Sorry, only literal strings are supported as regex-specs for now."))
+  (macrolet ((myerr ()
+	       `(error "Sorry, only literal strings are supported as regex-specs for now.")))
+    (cond ((stringp regex-spec) nil)
+	  ((consp regex-spec) (if (remove-if #'stringp regex-spec)
+				  (myerr)
+				  (setf regex-spec (format nil "~{~a~}" regex-spec))))
+	  (t (myerr))))
   (multiple-value-bind (scanner register-names)
       (let ((cl-ppcre::*allow-named-registers* t))
 	(cl-ppcre:create-scanner regex-spec))
