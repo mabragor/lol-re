@@ -153,6 +153,23 @@
 	    scanner-code
 	    `(funcall ,scanner-code ,argument))))))
 
+(defmacro!! s~ (regex-spec target-spec &optional (argument nil argument-p))
+    `(,(slot-value obj 'cl-read-macro-tokens::name)
+       ,(with-re-reader-context
+	 (read stream t nil t))
+       ,(with-re-reader-context
+	 (read stream t nil t))
+       ,@(read-list-old stream token))
+  (ensure-correct-regex-spec regex-spec)
+  (ensure-correct-regex-spec target-spec)
+  (let ((replacer-code `(lambda (str)
+			  (cl-ppcre:regex-replace ,regex-spec str ,target-spec))))
+    (if (not argument-p)
+	replacer-code
+	`(funcall ,replacer-code ,argument))))
+  
+
+
 (defvar *re-local-vars*)      
 				  
 (defmacro re-local (&body body &environment env)

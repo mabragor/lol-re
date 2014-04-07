@@ -55,4 +55,12 @@
 			      (m~ "(?<g>g)(?<h>h)"))))))
 			      
 			      
-  
+(test basic-replacing  
+  (is (equal "b" (funcall (s~ "a" "b") "a")))
+  (is (equal "b" (s~ "a" "b" "a")))
+  (is (equal "c" (funcall (s~ "a" "b") "c")))
+  (is (equal "c" (s~ "a" "b" "c"))))
+
+(test replace-basic-groups
+  (is (equal "foo06-04-2014bar"
+	     (funcall (s~ "(\d{4})-(\d{2})-(\d{2})" "\3-\2-\1") "foo2014-04-06bar"))))

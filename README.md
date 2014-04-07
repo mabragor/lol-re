@@ -36,11 +36,29 @@ TODO:
 S~
 --
 
-1. Not only \1 ... \2 may be used in target strings, but also $($1) .. $($9)
-   (and also named groups), a la cl-interpol
+For now, replacing only can replace first occurence of the match.
+But, still, it's not needed to escape all those backslashes.
+
+```lisp
+LOL-RE> (s~ "(\d{4})-(\d{2})-(\d{2})" "\3/\2/\1" "2014-04-07")
+07/04/2014
+```
+
+When called with just 2 arguments, generates replacer closure
+
+```lisp
+LOL-RE> (funcall (s~ "(\d{4})-(\d{2})-(\d{2})" "\3/\2/\1") "2014-04-07")
+07/04/2014
+```
+
 
 TODO:
-  * creation of substituter, both target and replacement are plain strings
+  * (done) creation of substituter, both target and replacement are plain strings, no named groups allowed
+  * named groups are allowed in target
+  * named groups are also allowed in replacement
+  * cl-interpol #?r strings
+  * lists are allowed instead of plain strings
+  * G symbol switch to do all possible replacements
 
 
 re-local
