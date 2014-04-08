@@ -194,6 +194,7 @@ So
 But
 ```lisp
 ;; this is (supposedly) thread-safe, as all the relevant variables are implicitly
+;; rebound as local dynamic, which are per-thread
 (re-local (and (m~ "foo(bar)") (princ $1)))
 ```
 
