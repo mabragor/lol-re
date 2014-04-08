@@ -2,7 +2,7 @@ lol-re
 ======
 
 Tiny wrapper around CL-PPCRE, making usage of regexps more perly.
-Inspired by let-over-lambda's #~m and #~s macro (http://www.letoverlambda.com)
+Inspired by let-over-lambda's #~m and #~s read-macro (http://www.letoverlambda.com)
 
 This package introduces two car-reader-macro (see CL-READ-MACRO-TOKENS) M~ and S~.
 M~ is for matching, while S~ is for substitution
@@ -11,32 +11,79 @@ M~ is for matching, while S~ is for substitution
 M~
 --
 
+Syntax:
+
+*m~* regexp [string]
+=> function | (or null string)
+
 Basic example:
 
 ```lisp
 (with-open-file (out-file "out-file" :direction :output)
   (iter (for line in-file "in-file" using #'readline)
         (and (m~ "(some)regexp(?<with>with)grouping(s)" line)
+             ;; plenty of anaphoric bindings are available after the match
              (format out-file #?"$($1) $($2) $($with) $($3)"))))
 ```
 
-Syntax of string in M~ is the same as in #?r cl-interpol's reader macro.
-The only differences are that interpolation is not possible for now, and you don't have
-to write #?r in front of it. Also, you can only use double quotes as outer delimiters,
-since doing otherwise confuses lisp-mode of Emacs a lot :)
+First argument of M~ is read in with reader of #?r" installed
+for ". Thus, you don't have to escape backslashes, appearing
+in front of regexp-meaning characters.
+Unfortunately, interpolation is not supported for now.
+Only double quotes are chosen as a delimiter, as otherwise
+ lisp-mode of Emacs would go crazy when seeing something like this: /"/
 
 When called with one argument (regexp), M~ expands into closure, which
 accepts string. When called with same string repeatedly, it outputs
 subsequent matches of the regexp on that string.
+
+```lisp
+LOL-RE> (defparameter matcher (m~ "[a-z]"))
+LOL-RE> (funcall matcher "asdf")
+"a"
+LOL-RE> (funcall matcher "asdf")
+"s"
+LOL-RE> (funcall matcher "asdf")
+"d"
+LOL-RE> (funcall matcher "asdf")
+"f"
+LOL-RE> (funcall matcher "asdf")
+NIL
+```
+
 When called with different strings, behavior may be strange.
+
+```lisp
+LOL-RE> (defparameter matcher (m~ "[a-z]"))
+LOL-RE> (funcall matcher "foo")
+"f"
+LOL-RE> (funcall matcher "bar") ; matching starts from the position, where first match finished
+"a"
+```
+
 However, when called with :RESET keyword, the position counter inside the closure
 is reset, so closure can be called now on some new string.
+
+```lisp
+LOL-RE> (defparameter matcher (m~ "[a-z]"))
+LOL-RE> (funcall matcher "foo")
+"f"
+LOL-RE> (funcall matcher :reset)
+T
+LOL-RE> (funcall matcher "bar")
+"b"
+```
 
 When called with two arguments (regexp and string), M~ expands into
 application of a matching closure to that string, so the first match
 of regexp on that string.
 
-M~ also sets some anaphoric bindings (as seen in the example):
+```lisp
+LOL-RE> (m~ "[0-9]+" "foo123bar456")
+"123"
+```
+
+M~ also sets some anaphoric bindings (as seen in the basic example):
   * $0 is the whole match, $-0 and $+0 are the beginning and the end positions of whole match
   * $1 is the first group, $-1 and $+1 are the beginning and the end of the first group
   * ... and so on for all other groups
@@ -44,9 +91,12 @@ M~ also sets some anaphoric bindings (as seen in the example):
     similar meaning. When generating symbol-name case of register is reversed, so
     for register named "fOo" symbols would be $|FoO|, $-|FoO| and $+|FoO|.
 
-Since all those anaphoric bindings are global dynamic variables
-  * first: they are equal to the ones relevant for the latest (in physical time) match performed.
-  * second: this may be tricky when multithreading, but see RE-LOCAL macro below
+Since all those anaphoric bindings are (by default) global dynamic variables
+  * they are equal to the ones relevant for the latest (in physical time) match performed.
+  * this may be tricky when multithreading, but see RE-LOCAL macro below
+
+Iterate drivers
+---------------
 
 System also defines two drivers for iterate: IN-MATCHES-OF and MATCHING
 
@@ -57,7 +107,7 @@ System also defines two drivers for iterate: IN-MATCHES-OF and MATCHING
 ```
 As seen from the example, IN-MATCHES-OF iterates over all
 matches of given regexp in a given string. Both string and regexp
-are evaluated once-only.
+are evaluated once-only, in the initialization of the loop.
 
 In contrast, first example could be rewritten using MATCHING driver as follows:
 
