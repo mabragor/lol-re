@@ -1,8 +1,8 @@
 lol-re
 ======
 
-Tiny wrapper around CL-PPCRE,
-to make usage of regexps more perly in the spirit of let-over-lambda (http://www.letoverlambda.com)
+Tiny wrapper around CL-PPCRE, making usage of regexps more perly.
+Inspired by let-over-lambda's #~m and #~s macro (http://www.letoverlambda.com)
 
 This package introduces two car-reader-macro (see CL-READ-MACRO-TOKENS) M~ and S~.
 M~ is for matching, while S~ is for substitution
@@ -21,7 +21,64 @@ Basic example:
 ```
 
 Syntax of string in M~ is the same as in #?r cl-interpol's reader macro.
-Only so far interpolations are not possible, but you don't have to escape backslashes!
+The only differences are that interpolation is not possible for now, and you don't have
+to write #?r in front of it. Also, you can only use double quotes as outer delimiters,
+since doing otherwise confuses lisp-mode of Emacs a lot :)
+
+When called with one argument (regexp), M~ expands into closure, which
+accepts string. When called with same string repeatedly, it outputs
+subsequent matches of the regexp on that string.
+When called with different strings, behavior may be strange.
+However, when called with :RESET keyword, the position counter inside the closure
+is reset, so closure can be called now on some new string.
+
+When called with two arguments (regexp and string), M~ expands into
+application of a matching closure to that string, so the first match
+of regexp on that string.
+
+M~ also sets some anaphoric bindings (as seen in the example):
+  * $0 is the whole match, $-0 and $+0 are the beginning and the end positions of whole match
+  * $1 is the first group, $-1 and $+1 are the beginning and the end of the first group
+  * ... and so on for all other groups
+  * if a group was *named*, say, "foo", then also variables $FOO, $-FOO and $+FOO, with
+    similar meaning. When generating symbol-name case of register is reversed, so
+    for register named "fOo" symbols would be $|FoO|, $-|FoO| and $+|FoO|.
+
+Since all those anaphoric bindings are global dynamic variables
+  * first: they are equal to the ones relevant for the latest (in physical time) match performed.
+  * second: this may be tricky when multithreading, but see RE-LOCAL macro below
+
+System also defines two drivers for iterate: IN-MATCHES-OF and MATCHING
+
+```lisp
+(iter (for match in-matches-of "asdf" using (m~ "[a-z]([a-z])"))
+      (collect `(,match ,$0 ,$1)))
+(("as" "as" "s") ("df" "df" "f"))
+```
+As seen from the example, IN-MATCHES-OF iterates over all
+matches of given regexp in a given string. Both string and regexp
+are evaluated once-only.
+
+In contrast, first example could be rewritten using MATCHING driver as follows:
+
+```lisp
+(with-open-file (out-file "out-file" :direction :output)
+  (iter (for line in-file "in-file" using #'readline)
+        (for match matching line using (m~ "(some)regexp(?<with>with)grouping(s)"))
+	(format out-file #?"$($1) $($2) $($with) $($3)")))
+```
+but there are couple important things, which MATCHING does differently:
+  * regexp is evaluated once-only, before the loop starts
+  * even if the line didn't match regexp, FORMAT is still executed, printing line of NILs
+
+So, MATCHING is more-or-less analogous to
+```lisp
+(let ((matcher (m~ "(some)regexp(?<with>with)grouping(s)")))
+  (with-open-file (out-file "out-file" :direction :output)
+    (iter (for line in-file "in-file" using #'readline)
+          (funcall matcher line)
+          (format out-file #?"$($1) $($2) $($with) $($3)"))))
+```
 
 TODO:
   * (done) creation of scanner, when regex-spec is just plain string
@@ -29,9 +86,14 @@ TODO:
   * usage of cl-interpol strings as regex-spec
   * (done) list of strings instead of just one string (auto joining)
   * ability to turn off some anaphoric bindings
-  * convenient iterate macros
-    * for iterating over all matches within a given string
-    * for iterating over multiple strings with the same regexp
+  * (done) convenient iterate macros
+    * (done) for iterating over all matches within a given string
+    * (done) for iterating over multiple strings with the same regexp
+  * ability to use only #?r syntax on implementations not supported by CL-READ-MACRO-TOKENS
+
+For more usage patterns, see tests.lisp file and use-cases.lisp.
+use-cases.lisp was assembled by grepping of some quicklisp-available libs
+and rewriting CL-PPCRE-using pieces with help of M~ and S~.
 
 S~
 --

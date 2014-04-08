@@ -64,3 +64,13 @@
 (test replace-basic-groups
   (is (equal "foo06-04-2014bar"
 	     (funcall (s~ "(\d{4})-(\d{2})-(\d{2})" "\3-\2-\1") "foo2014-04-06bar"))))
+
+(test iterate-drivers
+  (is (equal '(("a0" "0") ("a1" "1") ("a2" "2"))
+	     (iter (for i in-matches-of "a0a1a2" using (m~ "a([0-9])"))
+		   (collect `(,i ,$1)))))
+  (is (equal '(("a1" "1") ("a2" "2") (nil nil) ("a3" "3"))
+	     (iter (for str in '("a1b" "a2b" "b" "a3b"))
+		   (for m matching str using (m~ "a([0-9])"))
+		   (collect `(,m ,$1))))))
+  

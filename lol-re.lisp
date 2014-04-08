@@ -168,6 +168,18 @@
 	replacer-code
 	`(funcall ,replacer-code ,argument))))
   
+(defmacro-driver! (for var in-matches-of str using match)
+  (let ((kwd (if generate 'generate 'for)))
+    `(progn (with ,g!-str  = ,str)
+	    (with ,g!-matcher = ,match)
+	    (,kwd ,var next (let ((it (funcall ,g!-matcher ,g!-str)))
+			      (or it (terminate)))))))
+
+(defmacro-driver! (for var matching str using match)
+  (let ((kwd (if generate 'generate 'for)))
+    `(progn (with ,g!-matcher = ,match)
+	    (,kwd ,var next (progn (funcall ,g!-matcher :reset)
+				   (funcall ,g!-matcher ,str))))))
 
 
 (defvar *re-local-vars*)      
