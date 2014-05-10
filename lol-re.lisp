@@ -153,6 +153,16 @@
 	    scanner-code
 	    `(funcall ,scanner-code ,argument))))))
 
+(defmacro!! mr~ (regex-spec &optional (argument nil argument-p))
+    ()
+  `(let ((,g!-matcher (m~ ,regex-spec)))
+     (let ((,g!-lambda (lambda (x)
+			 (funcall ,g!-matcher :reset)
+			 (funcall ,g!-matcher x))))
+       ,(if argument-p
+	    `(funcall ,g!-lambda ,argument)
+	    g!-lambda))))
+
 (defmacro!! s~ (regex-spec target-spec &optional (argument nil argument-p))
     `(,(slot-value obj 'cl-read-macro-tokens::name)
        ,(with-re-reader-context

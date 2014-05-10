@@ -74,3 +74,10 @@
 		   (for m matching str using (m~ "a([0-9])"))
 		   (collect `(,m ,$1))))))
   
+(test basic-mr
+  (is (equal '("1" "2" "3")
+	     (let (res)
+	       (dolist (elt '("1" "2" "3"))
+		 (push (mr~ "[0-9]" elt) res))
+	       (nreverse res)))))
+      
