@@ -4,17 +4,19 @@
 
 ;;; "lol-re" goes here. Hacks and glory await!
 
-(defun mk-scan-iter (scanner)
-  (let ((pos 0))
-    (lambda (str)
-      (if (eq str :reset)
-	  (progn (setf pos 0)
-		 t)
-	  (multiple-value-bind (match-start match-end reg-starts reg-ends)
-	      (cl-ppcre:scan scanner str :start pos)
-	    (if match-start
-		(progn (setf pos match-end)
-		       (values match-start match-end reg-starts reg-ends))))))))
+(defun! mk-scan-iter-code (scanner-code)
+  `(let ((pos 0)
+	 (scanner ,scanner-code))
+     (lambda (str)
+       (if (eq str :reset)
+	   (progn (setf pos 0)
+		  t)
+	   (multiple-value-bind (match-start match-end reg-starts reg-ends)
+	       (cl-ppcre:scan scanner str :start pos)
+	     (if match-start
+		 (progn (setf pos match-end)
+			(values match-start match-end reg-starts reg-ends))))))))
+  
 
 (defun string-reverse-case (str)
   (iter (for char in-string str)
@@ -116,17 +118,20 @@
 					(setf ,regex-spec-var (format nil "~{~a~}" ,regex-spec-var))))
 	   (t (myerr)))))
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun mk-scanner-create-code (regex-spec)
+    `(let ((cl-ppcre::*allow-named-registers* t))
+       (cl-ppcre:create-scanner ,regex-spec))))
+
 (defmacro! with-scanner ((scan-var reg-var o!-regex-spec) &body body)
   `(multiple-value-bind (,scan-var ,reg-var)
-      (let ((cl-ppcre::*allow-named-registers* t))
-	(cl-ppcre:create-scanner ,o!-regex-spec))
+       ,(mk-scanner-create-code o!-regex-spec)
      (when (not ,reg-var)
        (setf ,reg-var (make-list (length
 				  (remove-if-not (lambda (x)
 						   (eq x :register))
 						 (alexandria:flatten (cl-ppcre:parse-string ,o!-regex-spec)))))))
      ,@body))
-
 
 (defmacro!! m~ (regex-spec &optional (argument nil argument-p))
     `(,(slot-value obj 'cl-read-macro-tokens::name)
@@ -135,23 +140,24 @@
        ,@(read-list-old stream token))
   (ensure-correct-regex-spec regex-spec)
   (with-scanner (scanner register-names regex-spec)
-    (let ((pre-scanner-lambda (mk-scan-iter scanner)))
-      (let ((scanner-code `(progn ,@(define-reg-vars register-names)
-				  (lambda (str)
-				    (multiple-value-bind (match-start match-end reg-starts reg-ends)
-					(funcall ,pre-scanner-lambda str)
-				      (declare (ignorable reg-starts reg-ends))
-				      (if match-start
-					  (if (eq match-start 't)
-					      (progn ,@(clear-regs register-names)
-						     t)
-					      (progn ,@(bind-regs register-names)
-						     ,(intern "$0")))
-					  (progn ,@(clear-regs register-names)
-						 nil)))))))
+    ;; (declare (ignore scanner))
+    (let ((scanner-code `(progn ,@(define-reg-vars register-names)
+				  (let ((,g!-scanner-iter ,(mk-scan-iter-code (mk-scanner-create-code regex-spec))))
+				    (lambda (str)
+				      (multiple-value-bind (match-start match-end reg-starts reg-ends)
+					  (funcall ,g!-scanner-iter str)
+					(declare (ignorable reg-starts reg-ends))
+					(if match-start
+					    (if (eq match-start 't)
+						(progn ,@(clear-regs register-names)
+						       t)
+						(progn ,@(bind-regs register-names)
+						       ,(intern "$0")))
+					    (progn ,@(clear-regs register-names)
+						   nil))))))))
 	(if (not argument-p)
 	    scanner-code
-	    `(funcall ,scanner-code ,argument))))))
+	    `(funcall ,scanner-code ,argument)))))
 
 (defmacro!! mr~ (regex-spec &optional (argument nil argument-p))
     ()
