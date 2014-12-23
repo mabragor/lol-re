@@ -77,7 +77,9 @@
                               (print regex-paretheses)
                               (length regex-paretheses))))
          ($-vars-let-form
-          (append '((|$`| (XX ML '|`|)) ($& (XX ML '&)) (|$'| (XX ML '|'|)))
+          (append '((|$`| (xx match-list '|`|))
+                    ($& (xx match-list '&))
+                    (|$'| (xx match-list '|'|)))
                   (when how-many-$-vars
                     (mapcar (lambda (var-num)
                               `(,(symbolicate "$"
@@ -88,8 +90,10 @@
        (if (plusp (length matches))
            (let* ((match-list (ppcre:split (format nil "(~a)" matches)
                                            ,str :with-registers-p t :limit 3))
-                  (declare (ignorable ,@(mapcar #'car $-vars-let-form)))
-                  ,then))
+                  ,@$-vars-let-form)
+
+             (declare (ignorable ,@(mapcar #'car $-vars-let-form)))
+             ,then)
            ,else))))
 
 (defmacro whenmatch ((test str) &body forms)
