@@ -67,6 +67,7 @@
     (\' (third l))))
 
 (defmacro ifmatch ((test str) then &optional else)
+  "Checks for the existence of group-capturing regex (in /for(bar)baz/, bar is capured) in the TEST and bind $1, $2, $n vars to the captured regex. Obviously, doesn't work with runtime regexes"
   (let* ((regexp (second (third test)))
          (how-many-$-vars (when (stringp regexp)
                             (let ((regex-paretheses
