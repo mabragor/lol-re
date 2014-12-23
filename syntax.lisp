@@ -1,4 +1,5 @@
 ;;; Taken from https://github.com/jschatzer/perlre/blob/master/perlre.lisp
+;; Authors: Doug Hoyte, jschatzer and André Miranda.
 (defpackage lol-re.syntax
   (:use cl)
   (:import-from defmacro-enhance
