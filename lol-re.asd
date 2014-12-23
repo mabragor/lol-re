@@ -6,8 +6,14 @@
   :description "Small set of wrappers around CL-PPCRE in spirit of Let Over Lambda."
   :author "Alexander Popolitov <popolit@gmail.com>"
   :license "GPL"
-  :depends-on (#:cl-ppcre #:cl-interpol #:cl-read-macro-tokens #:defmacro-enhance #:alexandria
-			  #:iterate #:hu.dwim.walker)
+  :depends-on (#:cl-ppcre
+               #:cl-interpol
+               #:cl-read-macro-tokens
+               #:cl-syntax
+               #:defmacro-enhance
+               #:alexandria
+               #:iterate
+               #:hu.dwim.walker)
   :components ((:file "package")
                (:file "lol-re")))
 

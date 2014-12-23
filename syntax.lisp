@@ -39,14 +39,22 @@
                 finally (unread-char c stm))
           'string))
 
-(set-dispatch-macro-character #\# #\~
-  (lambda (stm c n) (declare (ignore c n))
-    "dispatch function for #~"
-    (let ((mode-char (read-char stm)))
-      (case mode-char
-        (#\m (match-mode-ppcre-lambda-form (segment-reader stm (read-char stm) 1) (mods stm)))
-        (#\s (subst-mode-ppcre-lambda-form (segment-reader stm (read-char stm) 2) (mods stm)))
-        (t (error "Unknown #~~ mode character"))))))
+(defun |#~-reader| (stream char numarg)
+  (declare (ignore numarg))
+  (print char)
+  (let ((mode-char (read-char stream)))
+    (case mode-char
+      (#\m (match-mode-ppcre-lambda-form (segment-reader stream
+                                                         (read-char stream)
+                                                         1)
+                                         (mods stream)))
+      (#\s (subst-mode-ppcre-lambda-form (segment-reader stream
+                                                         (read-char stream)
+                                                         2)
+                                         (mods stream)))
+      (t (error "Unknown #~~ mode character")))))
+
+
 
 (defun xx (l i)
   (case i
