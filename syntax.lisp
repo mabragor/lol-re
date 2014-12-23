@@ -61,12 +61,6 @@
                                          (mods stream)))
       (t (error "Unknown #~~ mode character")))))
 
-(defun xx (l i)
-  (case i
-    (\` (first l))
-    (& (second l))
-    (\' (third l))))
-
 (defmacro ifmatch ((test str) then &optional else)
   "Checks for the existence of group-capturing regex (in /for(bar)baz/, bar is capured) in the TEST and bind $1, $2, $n vars to the captured regex. Obviously, doesn't work with runtime regexes"
   (let* ((regexp (second (third test)))
@@ -77,9 +71,9 @@
                               (print regex-paretheses)
                               (length regex-paretheses))))
          ($-vars-let-form
-          (append '((|$`| (xx match-list '|`|))
-                    ($& (xx match-list '&))
-                    (|$'| (xx match-list '|'|)))
+          (append '((|$`| (first match-list))
+                    ($&   (second match-list))
+                    (|$'| (third match-list)))
                   (when how-many-$-vars
                     (mapcar (lambda (var-num)
                               `(,(symbolicate "$"
