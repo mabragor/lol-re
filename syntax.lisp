@@ -88,4 +88,4 @@
 
 (defsyntax lol-re-syntax
   (:merge :standard)
-  (:dispatch-macro-character #\# #\~ #'|#~-reader|))
+  (:dispatch-macro-character #\# #\g #'|#~-reader|))
