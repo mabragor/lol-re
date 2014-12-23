@@ -66,24 +66,37 @@
     (& (second l))
     (\' (third l))))
 
-(defmacro ifmatch ((test str) conseq &optional altern)
-  `(multiple-value-bind (m a) (,test ,str) ; for match and array
-     (eval `(if (plusp (length ,m))
-              (let ((ml (ppcre:split (format nil "(~a)" ,m) ,',str :with-registers-p t :limit 3))) ;for match-list
-                (let ,#1=(append
-                           (mapcar #`(,(symbolicate "$" a1) (xx ml ',a1)) '(\` & \'))
-                           (mapcar #`(,(symbolicate "$" a1) (aref ,a ,(1- a1))) (loop for i from 1 to (length a) collect i)))
-                  (declare (ignorable ,@(mapcar #'car #1#)))
-                  ,',conseq))
-              ,',altern))))
+(defmacro ifmatch ((test str) then &optional else)
+  (let* ((regexp (second (third test)))
+         (how-many-$-vars (when (stringp regexp)
+                            (let ((regex-paretheses
+                                   (ppcre:all-matches-as-strings "\\((.*?)\\)"
+                                                                 regexp)))
+                              (print regex-paretheses)
+                              (length regex-paretheses))))
+         ($-vars-let-form
+          (append '((|$`| (XX ML '|`|)) ($& (XX ML '&)) (|$'| (XX ML '|'|)))
+                  (when how-many-$-vars
+                    (mapcar (lambda (var-num)
+                              `(,(symbolicate "$"
+                                              (write-to-string var-num))
+                                 (aref arr ,(1- var-num))))
+                            (loop for i from 1 to how-many-$-vars collect i))))))
+    `(multiple-value-bind (matches arr) (,test ,str)
+       (if (plusp (length matches))
+           (let* ((match-list (ppcre:split (format nil "(~a)" matches)
+                                           ,str :with-registers-p t :limit 3))
+                  (declare (ignorable ,@(mapcar #'car $-vars-let-form)))
+                  ,then))
+           ,else))))
 
-(defmacro whenmatch ((test str) conseq &rest more-conseq)
-  #"(whenmatch (#~m/"(b)(c)(d)(e)"/ "abcdef")
-    (print |$`|)
-    (print $2)
-    (print $4))"#
+(defmacro whenmatch ((test str) &body forms)
+  "(whenmatch (#~m/\"(b)(c)(d)(e)\"/ \"abcdef\")
+     (print |$`|)
+     (print $2)
+     (print $4))"
   `(ifmatch (,test ,str)
-     (progn ,conseq ,@more-conseq)))
+     (progn ,@forms)))
 
 (defsyntax lol-re-syntax
   (:merge :standard)
