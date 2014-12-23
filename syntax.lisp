@@ -90,9 +90,6 @@
              ,then)
            ,else))))
 
-(ifmatch (#~m/"(b)(c)(d)(e)"/ "abcdef")
-         (list $\` $& $\' $1 $2 $3 $4))
-
 (defmacro whenmatch ((test str) &body forms)
   "(whenmatch (#~m/\"(b)(c)(d)(e)\"/ \"abcdef\")
      (print |$`|)
