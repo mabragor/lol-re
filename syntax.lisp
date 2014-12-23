@@ -23,9 +23,9 @@
 
 (lol:defmacro! subst-mode-ppcre-lambda-form (o!args o!mods)
   ``(lambda (,',g!str)
-      (if (find #\g ,,g!mods)
-        (ppcre:regex-replace-all ,,regex ,',g!str ,(cadr ,g!args))
-        (ppcre:regex-replace ,,regex ,',g!str ,(cadr ,g!args)))))
+      ,(if (find #\g ,g!mods)
+           `(ppcre:regex-replace-all ,,regex ,',g!str ,(cadr ,g!args))
+           `(ppcre:regex-replace ,,regex ,',g!str ,(cadr ,g!args)))))
 
 (lol:defmacro! match-mode-ppcre-lambda-form (o!args o!mods)
   ``(lambda (,',g!str)
