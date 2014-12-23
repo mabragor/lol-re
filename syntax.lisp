@@ -61,7 +61,7 @@
                                          (mods stream)))
       (t (error "Unknown #~~ mode character")))))
 
-(defmacro ifmatch ((test str) then &optional else)
+(defmacro! ifmatch ((test str) then &optional else)
   "Checks for the existence of group-capturing regex (in /for(bar)baz/, bar is capured) in the TEST and bind $1, $2, $n vars to the captured regex. Obviously, doesn't work with runtime regexes"
   (let* ((regexp (second (third test)))
          (how-many-$-vars (when (stringp regexp)
@@ -71,24 +71,27 @@
                               (print regex-paretheses)
                               (length regex-paretheses))))
          ($-vars-let-form
-          (append '((|$`| (first match-list))
-                    ($&   (second match-list))
-                    (|$'| (third match-list)))
+          (append `((|$`| (first ,g!-match-list))
+                    ($&   (second ,g!-match-list))
+                    (|$'| (third ,g!-match-list)))
                   (when how-many-$-vars
                     (mapcar (lambda (var-num)
                               `(,(symbolicate "$"
                                               (write-to-string var-num))
-                                 (aref arr ,(1- var-num))))
+                                 (aref ,g!-arr ,(1- var-num))))
                             (loop for i from 1 to how-many-$-vars collect i))))))
-    `(multiple-value-bind (matches arr) (,test ,str)
-       (if (plusp (length matches))
-           (let* ((match-list (ppcre:split (format nil "(~a)" matches)
+    `(multiple-value-bind (,g!-matches ,g!-arr) (,test ,str)
+       (if (plusp (length ,g!-matches))
+           (let* ((,g!-match-list (ppcre:split (format nil "(~a)" ,g!-matches)
                                            ,str :with-registers-p t :limit 3))
                   ,@$-vars-let-form)
 
              (declare (ignorable ,@(mapcar #'car $-vars-let-form)))
              ,then)
            ,else))))
+
+(ifmatch (#~m/"(b)(c)(d)(e)"/ "abcdef")
+         (list $\` $& $\' $1 $2 $3 $4))
 
 (defmacro whenmatch ((test str) &body forms)
   "(whenmatch (#~m/\"(b)(c)(d)(e)\"/ \"abcdef\")
