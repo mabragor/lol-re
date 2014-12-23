@@ -8,7 +8,6 @@
   (:import-from alexandria
                 symbolicate)
   (:export lol-re-syntax))
-
 (in-package lol-re.syntax)
 
 (defun segment-reader (stream ch n)
@@ -16,13 +15,14 @@
   (if (> n 0)
     (let (chars)
       (do ((curr #1=(read-char stream) #1#))
-        ((char= ch curr))
+          ((char= ch curr))
         (push curr chars))
       (if (char= ch #\')
-        (cons (coerce (nreverse chars) 'string) (segment-reader stream ch (1- n)))
-        (cons (with-input-from-string (s (coerce (nreverse chars) 'string))
-                (read s))
-              (segment-reader stream ch (1- n)))))))
+          (cons (coerce (nreverse chars) 'string)
+                (segment-reader stream ch (1- n)))
+          (cons (with-input-from-string (s (coerce (nreverse chars) 'string))
+                  (read s))
+                (segment-reader stream ch (1- n)))))))
 
 (define-symbol-macro regex
     `(if (zerop (length ,o!-mods))
