@@ -6,21 +6,23 @@
   (:import-from cl-syntax
                 defsyntax)
   (:import-from alexandria
-                symbolicate))
+                symbolicate)
+  (:export lol-re-syntax))
 
 (in-package lol-re.syntax)
 
-(defun segment-reader (strm ch n)
+(defun segment-reader (stream ch n)
   "with m'' or s''' supress string interpolation, camel192"
   (if (> n 0)
     (let (chars)
-      (do ((curr #1=(read-char strm) #1#))
+      (do ((curr #1=(read-char stream) #1#))
         ((char= ch curr))
         (push curr chars))
       (if (char= ch #\')
-        (cons (coerce (nreverse chars) 'string) (segment-reader strm ch (1- n)))
-        (cons (with-input-from-string (s (coerce (nreverse chars) 'string)) (read s))
-              (segment-reader strm ch (1- n)))))))
+        (cons (coerce (nreverse chars) 'string) (segment-reader stream ch (1- n)))
+        (cons (with-input-from-string (s (coerce (nreverse chars) 'string))
+                (read s))
+              (segment-reader stream ch (1- n)))))))
 
 (define-symbol-macro regex
     `(if (zerop (length ,o!-mods))
@@ -28,25 +30,24 @@
          (format nil "(?~a)~a" (remove #\g ,o!-mods) (car ,o!-args))))
 
 (defmacro! subst-mode-ppcre-lambda-form (o!-args o!-mods)
-  ``(lambda (,',g!str)
-      ,(if (find #\g ,g!mods)
-           `(ppcre:regex-replace-all ,,regex ,',g!str ,(cadr ,g!args))
-           `(ppcre:regex-replace ,,regex ,',g!str ,(cadr ,g!args)))))
+  ``(lambda (,',g!-str)
+      ,(if (find #\g ,o!-mods)
+           `(ppcre:regex-replace-all ,,regex ,',g!-str ,(cadr ,o!-args))
+           `(ppcre:regex-replace ,,regex ,',g!-str ,(cadr ,o!-args)))))
 
 (defmacro! match-mode-ppcre-lambda-form (o!-args o!-mods)
-  ``(lambda (,',g!str)
-      (ppcre:scan-to-strings ,,regex ,',g!str)))
+  ``(lambda (,',g!-str)
+      (ppcre:scan-to-strings ,,regex ,',g!-str)))
 
-(defun mods (stm)
+(defun mods (stream)
   "imsxg modifiers"
-  (coerce (loop for c = (read-char stm)
+  (coerce (loop for c = (read-char stream)
                 while (alpha-char-p c) collect c
-                finally (unread-char c stm))
+                finally (unread-char c stream))
           'string))
 
 (defun |#~-reader| (stream char numarg)
-  (declare (ignore numarg))
-  (print char)
+  (declare (ignore char numarg))
   (let ((mode-char (read-char stream)))
     (case mode-char
       (#\m (match-mode-ppcre-lambda-form (segment-reader stream
@@ -58,8 +59,6 @@
                                                          2)
                                          (mods stream)))
       (t (error "Unknown #~~ mode character")))))
-
-
 
 (defun xx (l i)
   (case i
@@ -88,4 +87,4 @@
 
 (defsyntax lol-re-syntax
   (:merge :standard)
-  (:dispatch-macro-character #\# #\g #'|#~-reader|))
+  (:dispatch-macro-char #\# #\~ #'|#~-reader|))
