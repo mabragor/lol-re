@@ -1,6 +1,8 @@
 ;;; Taken from https://github.com/jschatzer/perlre/blob/master/perlre.lisp
 (defpackage lol-re.syntax
-  (:use cl))
+  (:use cl)
+  (:import-from defmacro-enhance
+                defmacro!))
 (in-package lol-re.syntax)
 
 (defun segment-reader (strm ch n)
@@ -15,19 +17,18 @@
         (cons (with-input-from-string (s (coerce (nreverse chars) 'string)) (read s))
               (segment-reader strm ch (1- n)))))))
 
-(define-symbol-macro
-  regex
-  `(if (zerop (length ,g!mods))
-     (car ,g!args)
-     (format nil "(?~a)~a" (remove #\g ,g!mods) (car ,g!args))))
+(define-symbol-macro regex
+    `(if (zerop (length ,o!-mods))
+         (car ,o!-args)
+         (format nil "(?~a)~a" (remove #\g ,o!-mods) (car ,o!-args))))
 
-(lol:defmacro! subst-mode-ppcre-lambda-form (o!args o!mods)
+(defmacro! subst-mode-ppcre-lambda-form (o!-args o!-mods)
   ``(lambda (,',g!str)
       ,(if (find #\g ,g!mods)
            `(ppcre:regex-replace-all ,,regex ,',g!str ,(cadr ,g!args))
            `(ppcre:regex-replace ,,regex ,',g!str ,(cadr ,g!args)))))
 
-(lol:defmacro! match-mode-ppcre-lambda-form (o!args o!mods)
+(defmacro! match-mode-ppcre-lambda-form (o!-args o!-mods)
   ``(lambda (,',g!str)
       (ppcre:scan-to-strings ,,regex ,',g!str)))
 
@@ -53,8 +54,7 @@
     (& (second l))
     (\' (third l))))
 
-; for now without gensyms, 15.12.14
-(lol:defmacro! ifmatch ((test str) conseq &optional altern)
+(defmacro ifmatch ((test str) conseq &optional altern)
   `(multiple-value-bind (m a) (,test ,str) ; for match and array
      (eval `(if (plusp (length ,m))
               (let ((ml (ppcre:split (format nil "(~a)" ,m) ,',str :with-registers-p t :limit 3))) ;for match-list
