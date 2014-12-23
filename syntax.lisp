@@ -2,7 +2,12 @@
 (defpackage lol-re.syntax
   (:use cl)
   (:import-from defmacro-enhance
-                defmacro!))
+                defmacro!)
+  (:import-from cl-syntax
+                defsyntax)
+  (:import-from alexandria
+                symbolicate))
+
 (in-package lol-re.syntax)
 
 (defun segment-reader (strm ch n)
@@ -67,8 +72,8 @@
      (eval `(if (plusp (length ,m))
               (let ((ml (ppcre:split (format nil "(~a)" ,m) ,',str :with-registers-p t :limit 3))) ;for match-list
                 (let ,#1=(append
-                           (mapcar #`(,(lol:symb "$" a1) (xx ml ',a1)) '(\` & \'))
-                           (mapcar #`(,(lol:symb "$" a1) (aref ,a ,(1- a1))) (loop for i from 1 to (length a) collect i)))
+                           (mapcar #`(,(symbolicate "$" a1) (xx ml ',a1)) '(\` & \'))
+                           (mapcar #`(,(symbolicate "$" a1) (aref ,a ,(1- a1))) (loop for i from 1 to (length a) collect i)))
                   (declare (ignorable ,@(mapcar #'car #1#)))
                   ,',conseq))
               ,',altern))))
@@ -80,3 +85,7 @@
     (print $4))"#
   `(ifmatch (,test ,str)
      (progn ,conseq ,@more-conseq)))
+
+(defsyntax lol-re-syntax
+  (:merge :standard)
+  (:dispatch-macro-character #\# #\~ #'|#~-reader|))
