@@ -14,7 +14,8 @@
                #:alexandria
                #:iterate
                #:hu.dwim.walker)
-  :components ((:file "package")
+  :components ((:file "syntax")
+               (:file "package")
                (:file "lol-re")))
 
 
