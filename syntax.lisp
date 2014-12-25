@@ -4,8 +4,8 @@
   (:use cl)
   (:import-from defmacro-enhance
                 defmacro!)
-  (:import-from cl-syntax
-                defsyntax)
+  (:import-from named-readtables
+                defreadtable)
   (:import-from alexandria
                 symbolicate)
   (:export lol-re-syntax))
@@ -98,6 +98,6 @@
   `(ifmatch (,test ,str)
      (progn ,@forms)))
 
-(defsyntax lol-re-syntax
+(defreadtable lol-re-syntax
   (:merge :standard)
   (:dispatch-macro-char #\# #\~ #'|#~-reader|))

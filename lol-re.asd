@@ -9,7 +9,7 @@
   :depends-on (#:cl-ppcre
                #:cl-interpol
                #:cl-read-macro-tokens
-               #:cl-syntax
+               #:named-readtables
                #:defmacro-enhance
                #:alexandria
                #:iterate
